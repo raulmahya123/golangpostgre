@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"golangsidang/models"
@@ -153,13 +154,66 @@ func endsWithGmail(email string) bool {
 	return len(email) >= len("@gmail.com") && email[len(email)-len("@gmail.com"):] == "@gmail.com"
 }
 
+// GetAllUser paginates and retrieves all users
 func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 	var users []models.User
 	r.DB.Find(&users)
+	//length of users
+	var count int64
+	r.DB.Model(&models.User{}).Count(&count)
 
-	return c.JSON(&fiber.Map{
+	// Get pagination parameters from query parameters
+	pageNumber := c.Query("page", "1")
+	pageSize := c.Query("pageSize", "10")
+
+	// Convert string parameters to integers
+	pageNum, err := strconv.Atoi(pageNumber)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid page number",
+		})
+	}
+
+	pageSze, err := strconv.Atoi(pageSize)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid page size",
+		})
+	}
+
+	// Paginate the users
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+	// ketika size 20 maka total data juga harus 20
+	size := int(count) / pageSze
+
+	pageSizeNow := len(users)
+	// pageSizeNow melebih total data
+	if pageSizeNow > int(count) {
+		pageSizeNow = int(count)
+	}
+
+	r.DB.Model(&models.User{}).Count(&count)
+	r.DB.Offset((pageNum - 1) * pageSze).Limit(pageSze).Find(&users)
+	// Get the size of the current page
+
+	return c.JSON(fiber.Map{
+		"data": fiber.Map{
+			"users": users,
+			"meta": fiber.Map{
+				"page":       pageNum,
+				"pageSize":   pageSze,
+				"totalPages": size,
+				"totalItems": pageSizeNow,
+			},
+		},
 		"status": "success",
-		"data":   users,
 	})
 }
 
