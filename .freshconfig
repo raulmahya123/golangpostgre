@@ -1,0 +1,4 @@
+root:       .
+build_name: app
+build_log:  build.log
+log_color:  true
