@@ -157,10 +157,10 @@ func endsWithGmail(email string) bool {
 // GetAllUser paginates and retrieves all users
 func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 	var users []models.User
-	r.DB.Find(&users)
-	//length of users
 	var count int64
+
 	r.DB.Model(&models.User{}).Count(&count)
+	r.DB.Find(&users)
 
 	// Get pagination parameters from query parameters
 	pageNumber := c.Query("page", "1")
@@ -184,24 +184,10 @@ func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 	}
 
 	// Paginate the users
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
-	}
-	// ketika size 20 maka total data juga harus 20
-	size := int(count) / pageSze
+	offset := (pageNum - 1) * pageSze
+	r.DB.Offset(offset).Limit(pageSze).Find(&users)
 
-	pageSizeNow := len(users)
-	// pageSizeNow melebih total data
-	if pageSizeNow > int(count) {
-		pageSizeNow = int(count)
-	}
-
-	r.DB.Model(&models.User{}).Count(&count)
-	r.DB.Offset((pageNum - 1) * pageSze).Limit(pageSze).Find(&users)
-	// Get the size of the current page
+	totalPages, pageSizeNow := utils.Pagination(count, pageNum, pageSze)
 
 	return c.JSON(fiber.Map{
 		"data": fiber.Map{
@@ -209,14 +195,13 @@ func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 			"meta": fiber.Map{
 				"page":       pageNum,
 				"pageSize":   pageSze,
-				"totalPages": size,
+				"totalPages": totalPages,
 				"totalItems": pageSizeNow,
 			},
 		},
 		"status": "success",
 	})
 }
-
 func (r *Repositorry) GetUserByUsername(c *fiber.Ctx) error {
 	username := c.Params("username")
 
