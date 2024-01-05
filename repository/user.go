@@ -190,6 +190,7 @@ func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 	totalPages, pageSizeNow := utils.Pagination(count, pageNum, pageSze)
 
 	return c.JSON(fiber.Map{
+		"status": "success",
 		"data": fiber.Map{
 			"users": users,
 			"meta": fiber.Map{
@@ -199,7 +200,6 @@ func (r *Repositorry) GetAllUser(c *fiber.Ctx) error {
 				"totalItems": pageSizeNow,
 			},
 		},
-		"status": "success",
 	})
 }
 func (r *Repositorry) GetUserByUsername(c *fiber.Ctx) error {
