@@ -38,6 +38,8 @@ func main() {
 
 	// Migrate database models
 	err = models.MigrateBooks(db)
+	models.MigrateCourse(db)
+	models.MigrateProgram(db)
 	if err != nil {
 		log.Fatal("error migrating books")
 	}
@@ -47,7 +49,13 @@ func main() {
 	// Create a new Fiber app
 	app := fiber.New()
 	repo2 := repository.New(db)
+	course := repository.CourseRepository{db}
+	repo3 := repository.ProgramRepository{db}
+
 	routes.UserRoutes(app, repo2)
+	routes.CourseRoutes(app, &course)
+	routes.ProgramRoutes(app, &repo3)
+
 	// Create a repository instance using NewRepository
 	repo := repository.NewRepository(db)
 	// Create another repository instance using New
